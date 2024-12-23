@@ -56,8 +56,3 @@ def calculate_cosine_correlation(x, L = 1):
     corr[non_zero_norms] = dot_products[non_zero_norms] / (norm_Su[non_zero_norms] * norm_Sl[non_zero_norms])
 
     return np.mean(corr[non_zero_norms])
-
-x = [[1,2,3], [4,5,6], [7,8,9]]
-x = np.asarray(x)
-print(calculate_pearson_correlation(x))
-print(calculate_cosine_correlation(x))

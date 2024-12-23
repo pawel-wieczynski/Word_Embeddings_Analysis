@@ -54,20 +54,3 @@ class WordEmbeddings:
         n_tokens = len(tokens)
         n_covered = sum(token in self.embeddings for token in tokens)
         return n_covered / n_tokens if n_tokens > 0 else 0.0
-
-test = TextReader("1513")
-test.download_text()
-# print(test.text)
-# sw = ['the', 'or', 'of', 'and']
-test_preprocess = TextPreprocessor("english")
-tokens = test_preprocess.preprocess_text(test.text)
-# print(tokens)
-word_embeddings = WordEmbeddings("model.bin")
-word_embeddings.load_embeddings()
-vectors = word_embeddings.embed_text(tokens)
-print(len(tokens))
-print(len(vectors))
-print(vectors[0].shape)
-print(word_embeddings.calculate_coverage(tokens))
-# print(vectors[0:10])
-# print(test_preprocess.tokens)
