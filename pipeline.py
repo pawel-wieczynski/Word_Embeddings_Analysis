@@ -3,6 +3,8 @@ import correlations
 import utils
 import numpy as np
 from scipy.optimize import curve_fit
+import seaborn as sns
+import matplotlib.pyplot as plt
 
 class TextAnalysisPipeline:
     def __init__(self, book_id: str, language: str, embedding_path: str):
@@ -49,3 +51,19 @@ class TextAnalysisPipeline:
     def fit_power_law(self):
         popt, pcov = curve_fit(utils.power_law, self.lags, self.autocorrelation_cosine, p0 = [1, -1, 1])
         self.power_law = popt
+
+    def make_plots(self, scales = 'normal', n = 200):
+        if scales == 'log':
+            lags_this = np.log2(self.lags)
+            acf_this = np.log2(np.abs(self.autocorrelation_cosine))
+        else:
+            lags_this = self.lags
+            acf_this = self.autocorrelation_cosine
+
+        lags_fit = np.linspace(min(lags_this), max(lags_this), n)
+        acf_fit = utils.power_law(lags_fit, self.power_law[0], self.power_law[1], self.power_law[2])
+
+        plt.figure()
+        sns.scatterplot(x = lags_this, y = acf_this)
+        sns.lineplot(x = lags_fit, y = acf_fit, color = 'red')
+        plt.savefig("plot.png")
