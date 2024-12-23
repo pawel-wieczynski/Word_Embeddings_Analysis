@@ -1,6 +1,8 @@
 import word_embeddings
 import correlations
+import utils
 import numpy as np
+from scipy.optimize import curve_fit
 
 class TextAnalysisPipeline:
     def __init__(self, book_id: str, language: str, embedding_path: str):
@@ -33,6 +35,7 @@ class TextAnalysisPipeline:
         # Step 4. calculate autocorrelation
         self.calculate_autocorrelation()
         # Step 5. fit power law
+        self.fit_power_law()
     
     def calculate_autocorrelation(self):
         max_lag = 0.5 * (len(self.vectors) - 1)
@@ -42,3 +45,7 @@ class TextAnalysisPipeline:
             current_acf = correlations.calculate_cosine_correlation(self.vectors, L = current_lag)
             self.autocorrelation_cosine.append(current_acf)
             current_lag = int(np.ceil(current_lag * 1.1))
+    
+    def fit_power_law(self):
+        popt, pcov = curve_fit(utils.power_law, self.lags, self.autocorrelation_cosine, p0 = [1, -1, 1])
+        self.power_law = popt
