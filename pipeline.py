@@ -7,8 +7,13 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 
 class TextAnalysisPipeline:
-    def __init__(self, book_id: str, language: str, embedding_path: str):
+    def __init__(self, book_id: str, source: str, language: str, embedding_path: str):
+        """
+        Parameters:
+            source (str): "PG" for Project Gutenberg website, "SGPC" for local files standardized by Gerlach, Font-Clos (2018).
+        """
         self.book_id = book_id
+        self.source = source
         self.language = language
         self.embedding_path = embedding_path
 
@@ -27,10 +32,19 @@ class TextAnalysisPipeline:
 
     def run_pipeline(self):
         # Step 1: download text from Project Gutenberg
-        self.reader.download_text()
-        self.raw_text = self.reader.text
+        if self.source == "PG":
+            self.reader.download_text()
+            self.raw_text = self.reader.text
+        elif self.source == "SGPC":
+            self.reader.read_tokens()
+            self.tokens = self.reader.tokens
+        else:
+            ValueError("Unknown source. Please use either PG or SGPC.")
         # Step 2: preprocessing and tokenization
-        self.tokens = self.preprocessor.preprocess_text(self.raw_text)
+        if self.source == "PG":
+            self.tokens = self.preprocessor.preprocess_text(self.raw_text)
+        else:
+            ValueError("Unknown source. Please use either PG or SGPC.")
         # Step 3: words to vectors
         self.embedder.load_embeddings()
         self.vectors = np.asarray(self.embedder.embed_text(self.tokens))

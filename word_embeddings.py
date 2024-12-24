@@ -8,18 +8,24 @@ from nltk.corpus import stopwords
 
 class TextReader:
     """
-    Downloading data from Project Gutenberg.
+    Downloading data from Project Gutenberg or reading local files with tokens from Standardized Project Gutenberg Corpus (SPGC) by Gerlach, Font-Clos (2018).
     """
 
     def __init__(self, book_id: str) -> None:
         self.book_id = book_id
         self.url = f"https://www.gutenberg.org/cache/epub/{book_id}/pg{book_id}.txt"
+        self.path = f"SPGC-tokens-2018-07-18/PG{book_id}_tokens.txt"
         self.text = None
+        self.tokens = None
     
     def download_text(self) -> str:
         response = requests.get(self.url)
         self.text = response.text
-
+    
+    def read_tokens(self) -> list[str]:
+        text_file = open(self.path, "r")
+        self.tokens = text_file.read().split('\n')
+        
 class TextPreprocessor:
     """
     Preprocessing steps:
