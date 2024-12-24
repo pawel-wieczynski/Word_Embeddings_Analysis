@@ -1,1 +1,5 @@
 .venv/
+__pycache__/
+embeddings/
+SPGC-tokens-2018-07-18/
+SPGC-metadata-2018-07-18.csv

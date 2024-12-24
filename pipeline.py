@@ -63,7 +63,7 @@ class TextAnalysisPipeline:
             current_lag = int(np.ceil(current_lag * 1.1))
     
     def fit_power_law(self):
-        popt, pcov = curve_fit(utils.power_law, self.lags, self.autocorrelation_cosine, p0 = [1, -1, 1])
+        popt, pcov = curve_fit(utils.power_law, self.lags, self.autocorrelation_cosine, p0 = [1, -1, 1], maxfev = 5000)
         self.power_law = popt
 
     def make_plots(self, scales = 'normal', n = 200):
@@ -80,4 +80,4 @@ class TextAnalysisPipeline:
         plt.figure()
         sns.scatterplot(x = lags_this, y = acf_this)
         sns.lineplot(x = lags_fit, y = acf_fit, color = 'red')
-        plt.savefig("plot.png")
+        plt.savefig(f"plot{self.book_id}.png")

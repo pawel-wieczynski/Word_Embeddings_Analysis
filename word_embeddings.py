@@ -14,7 +14,7 @@ class TextReader:
     def __init__(self, book_id: str) -> None:
         self.book_id = book_id
         self.url = f"https://www.gutenberg.org/cache/epub/{book_id}/pg{book_id}.txt"
-        self.path = f"SPGC-tokens-2018-07-18/PG{book_id}_tokens.txt"
+        self.path = f"SPGC-tokens-2018-07-18/{book_id}_tokens.txt"
         self.text = None
         self.tokens = None
     
