@@ -1,3 +1,4 @@
+import word_embeddings
 import pipeline
 import pandas as pd
 
@@ -9,6 +10,10 @@ import pandas as pd
 
 # Research questions:
 #   - analyze power-law coefficient distribution among subjects, languages, authors etc.
+
+# Load word embeddings
+embedder = word_embeddings.WordEmbeddings("embeddings/word2vec-google-news-300.gensim")
+embedder.load_embeddings()
 
 # Import metadata
 metadata = pd.read_csv("SPGC-metadata-2018-07-18.csv")
@@ -23,7 +28,7 @@ coeffs = []
 # Run pipeline for each book
 for id in books_ids:
     print(f"Analyzing book {id}...")
-    book_pipeline = pipeline.TextAnalysisPipeline(id, "SGPC", "english", "embeddings/word2vec-google-news-300.gensim")
+    book_pipeline = pipeline.TextAnalysisPipeline(id, "SGPC", "english", embedder)
     book_pipeline.run_pipeline()
     print(f"Tokens coverage: {book_pipeline.embedder.calculate_coverage(book_pipeline.tokens)}")
     coeffs.append(book_pipeline.power_law[1])

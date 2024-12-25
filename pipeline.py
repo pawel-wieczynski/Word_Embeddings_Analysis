@@ -7,7 +7,7 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 
 class TextAnalysisPipeline:
-    def __init__(self, book_id: str, source: str, language: str, embedding_path: str):
+    def __init__(self, book_id: str, source: str, language: str, embedder: word_embeddings.WordEmbeddings):
         """
         Parameters:
             source (str): "PG" for Project Gutenberg website, "SGPC" for local files standardized by Gerlach, Font-Clos (2018).
@@ -15,11 +15,10 @@ class TextAnalysisPipeline:
         self.book_id = book_id
         self.source = source
         self.language = language
-        self.embedding_path = embedding_path
+        self.embedder = embedder
 
         self.reader = word_embeddings.TextReader(book_id)
         self.preprocessor = word_embeddings.TextPreprocessor(language)
-        self.embedder = word_embeddings.WordEmbeddings(embedding_path)
 
         self.raw_text = None
         self.tokens = None
@@ -46,7 +45,6 @@ class TextAnalysisPipeline:
         else:
             ValueError("Unknown source. Please use either PG or SGPC.")
         # Step 3: words to vectors
-        self.embedder.load_embeddings()
         self.vectors = np.asarray(self.embedder.embed_text(self.tokens))
         # Step 4. calculate autocorrelation
         self.calculate_autocorrelation()
