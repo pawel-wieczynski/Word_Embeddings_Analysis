@@ -1,6 +1,6 @@
 import requests
 import re
-from gensim.models.keyedvectors import load_word2vec_format
+from gensim.models import KeyedVectors
 import numpy as np
 # import nltk
 from nltk.corpus import stopwords
@@ -51,7 +51,12 @@ class WordEmbeddings:
         self.embeddings = None
     
     def load_embeddings(self) -> None:
-        self.embeddings = load_word2vec_format(self.embedding_path, binary = True)
+        if self.embedding_path.endswith(".bin"):
+            self.embeddings = KeyedVectors.load_word2vec_format(self.embedding_path, binary = True)
+        elif self.embedding_path.endswith(".gensim"):
+            self.embeddings = KeyedVectors.load(self.embedding_path)
+        else:
+            raise ValueError("Unknown format. Use eitther .bin file or .gensim file.")
 
     def embed_text(self, tokens: list[str]) -> list[np.ndarray]:
         return [self.embeddings[word] for word in tokens if word in self.embeddings]

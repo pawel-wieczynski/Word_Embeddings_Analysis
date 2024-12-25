@@ -2,7 +2,6 @@ import pipeline
 import pandas as pd
 
 # Issues / TBD:
-#   - low correlation at lag 1 has high influence on power-law coefficient estimation => to be investigated
 #   - add error handling for failed optimization when fitting power-law coefficients ("RuntimeError: Optimal parameters not found...")
 #   - add parallel processing to speed up analysis of 50000 books
 #   - check of embeddings are Gaussian, if so use also Pearson based autocorrelation
@@ -24,11 +23,13 @@ coeffs = []
 # Run pipeline for each book
 for id in books_ids:
     print(f"Analyzing book {id}...")
-    book_pipeline = pipeline.TextAnalysisPipeline(id, "SGPC", "english", "embeddings/model.bin")
+    book_pipeline = pipeline.TextAnalysisPipeline(id, "SGPC", "english", "embeddings/word2vec-google-news-300.gensim")
     book_pipeline.run_pipeline()
+    print(f"Tokens coverage: {book_pipeline.embedder.calculate_coverage(book_pipeline.tokens)}")
     coeffs.append(book_pipeline.power_law[1])
-    # book_pipeline.make_plots()
+    book_pipeline.make_plots()
 
+print(coeffs)
 # Export results
 power_law_results = pd.DataFrame({
     "book_id": books_ids,
