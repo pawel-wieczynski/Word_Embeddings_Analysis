@@ -1,6 +1,6 @@
-import word_embeddings
-import correlations
-import utils
+from scripts import word_embeddings
+from scripts import correlations
+from scripts import utils
 import numpy as np
 import pingouin as pg
 from scipy.optimize import curve_fit
@@ -71,10 +71,14 @@ class TextAnalysisPipeline:
             current_lag = int(np.ceil(current_lag * 1.1))
     
     def fit_power_law(self):
-        popt, pcov = curve_fit(utils.power_law, self.lags, self.autocorrelation_cosine, p0 = [1, -1, 1], maxfev = 5000)
-        popt2, pcov2 = curve_fit(utils.power_law, self.lags, self.autocorrelation_pearson, p0 = [1, -1, 1], maxfev = 5000)
-        self.power_law_cosine = popt[1]
-        self.power_law_pearson = popt2[1]
+        def _fit_power_law(lags, acf_function):
+            try:
+                popt, _ = curve_fit(utils.power_law, lags, acf_function, p0 = [1, -1, 1], maxfev = 5000)
+                return popt[1]
+            except Exception as e:
+                print(f"Error fitting power law for autocorrelation: {e}")
+        self.power_law_cosine = _fit_power_law(self.lags, self.autocorrelation_cosine)
+        self.power_law_pearson = _fit_power_law(self.lags, self.autocorrelation_pearson)
     
     def check_normality(self):
         self.normality = pg.multivariate_normality(self.vectors)[1] # p-value of Henze-Zirkler test
