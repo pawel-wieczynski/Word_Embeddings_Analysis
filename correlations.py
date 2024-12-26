@@ -1,18 +1,25 @@
 import numpy as np
 
-def calculate_pearson_correlation(x, L = 1):
-    # x should be array of shape (N, d)
+def _prepare_data_for_autocorrelation(x, L = 1):
+    """
+    Parameters:
+            x: array of shape (N, d)
+    """
     N = x.shape[0]
-    d = x.shape[1]
 
     if L < 1 or L >= N:
         raise ValueError("Lag must be a positive integer, but lower than length of time-serie.")
-
+    
     M = N - L # number of pairs
     Su = x[0:M] # unshifted serie
     Sl = x[L:(M+L)] # lagged serie
 
-    # Expected shape of array (d,) dlatego nie potrzebujemy petli po c
+    return Su, Sl, M
+
+def calculate_pearson_correlation(x, L = 1):
+    Su, Sl, M = _prepare_data_for_autocorrelation(x = x, L = L)
+
+    # Expected shape (d, )
     mean_Su = np.mean(Su, axis = 0)
     mean_Sl = np.mean(Sl, axis = 0)
     mean_Su_sq = np.mean(Su ** 2, axis = 0)
@@ -34,24 +41,15 @@ def calculate_pearson_correlation(x, L = 1):
     return corr
 
 def calculate_cosine_correlation(x, L = 1):
-    # x should be array of shape (N, d)
-    N = x.shape[0]
-    d = x.shape[1]
+    Su, Sl, M = _prepare_data_for_autocorrelation(x = x, L = L)
 
-    if L < 1 or L >= N:
-        raise ValueError("Lag must be a positive integer, but lower than length of time-serie.")
-
-    M = N - L # number of pairs
-    Su = x[0:M] # unshifted serie
-    Sl = x[L:(M+L)] # lagged serie
-
-    # Expected shape of array (M,)
+    # Expected shape (M, )
     norm_Su = np.linalg.norm(Su, axis = 1)
     norm_Sl = np.linalg.norm(Sl, axis = 1)
     dot_products = np.einsum('ij, ij -> i', Su, Sl)
 
     # Exclude pairs with zero norm
-    non_zero_norms = (norm_Su > 0) & (norm_Sl > 0) # True/False vector
+    non_zero_norms = (norm_Su > 0) & (norm_Sl > 0)
     corr = np.zeros(M)
     corr[non_zero_norms] = dot_products[non_zero_norms] / (norm_Su[non_zero_norms] * norm_Sl[non_zero_norms])
 
