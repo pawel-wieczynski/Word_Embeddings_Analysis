@@ -26,7 +26,7 @@ class TextAnalysisPipeline:
         self.vectors = None
 
         self.lags = []
-        # self.autocorrelation_pearson = []
+        self.autocorrelation_pearson = []
         self.autocorrelation_cosine = []
         self.power_law = None
         self.normality = None
@@ -60,8 +60,10 @@ class TextAnalysisPipeline:
         current_lag = 1
         while current_lag < max_lag:
             self.lags.append(current_lag)
-            current_acf = correlations.calculate_cosine_correlation(self.vectors, L = current_lag)
-            self.autocorrelation_cosine.append(current_acf)
+            current_acf_cosine = correlations.calculate_cosine_correlation(self.vectors, L = current_lag)
+            current_acf_pearson = correlations.calculate_cosine_correlation(self.vectors, L = current_lag)
+            self.autocorrelation_cosine.append(current_acf_cosine)
+            self.autocorrelation_pearson.append(current_acf_pearson)
             current_lag = int(np.ceil(current_lag * 1.1))
     
     def fit_power_law(self):
