@@ -1,9 +1,11 @@
-import word_embeddings
-import pipeline
+from scripts import word_embeddings
+from scripts import pipeline
 import pandas as pd
 
 # Issues / TBD:
 #   - add error handling for failed optimization when fitting power-law coefficients ("RuntimeError: Optimal parameters not found...")
+#   - add error handling for small files, e.g. PG65 (TypeError: The number of func parameters=3 must not exceed the number of data points=2)
+#   - add error handling for big files (numpy.core._exceptions._ArrayMemoryError: Unable to allocate 1.57 TiB for an array with shape (657368, 657368) and data type float32)
 #   - add parallel processing to speed up analysis of 50000 books
 #   - PCA or other dimensionality reduction technique
 
@@ -20,7 +22,11 @@ metadata = pd.read_csv("SPGC-metadata-2018-07-18.csv")
 # Filter books in English
 metadata = metadata[metadata["language"] == "['en']"]
 
-metadata = metadata.iloc[0:8, :] # FOR TESTING PURPOSES
+# RAM limitation
+metadata = metadata[metadata["file_size"] < 100.0]
+
+print(metadata.shape)
+metadata = metadata.iloc[0:9, :] # FOR TESTING PURPOSES
 # Initialize lists to store results
 books_ids = metadata["id"].tolist()
 text_coverage = []
