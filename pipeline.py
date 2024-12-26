@@ -2,6 +2,7 @@ import word_embeddings
 import correlations
 import utils
 import numpy as np
+import pingouin as pg
 from scipy.optimize import curve_fit
 import seaborn as sns
 import matplotlib.pyplot as plt
@@ -25,9 +26,10 @@ class TextAnalysisPipeline:
         self.vectors = None
 
         self.lags = []
-        # self.autocorrelation_pearson = None
+        # self.autocorrelation_pearson = []
         self.autocorrelation_cosine = []
         self.power_law = None
+        self.normality = None
 
     def run_pipeline(self):
         # Step 1: download text from Project Gutenberg
@@ -50,6 +52,8 @@ class TextAnalysisPipeline:
         self.calculate_autocorrelation()
         # Step 5. fit power law
         self.fit_power_law()
+        # Step 6. check if word embeddings are normally distributed
+        self.check_normality()
     
     def calculate_autocorrelation(self):
         max_lag = 0.5 * (len(self.vectors) - 1)
@@ -63,6 +67,9 @@ class TextAnalysisPipeline:
     def fit_power_law(self):
         popt, pcov = curve_fit(utils.power_law, self.lags, self.autocorrelation_cosine, p0 = [1, -1, 1], maxfev = 5000)
         self.power_law = popt
+    
+    def check_normality(self):
+        self.normality = pg.multivariate_normality(self.vectors)[1] # p-value of Henze-Zirkler test
 
     def make_plots(self, scales = 'normal', n = 200):
         if scales == 'log':
