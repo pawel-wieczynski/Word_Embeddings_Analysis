@@ -5,7 +5,6 @@ import pandas as pd
 # Issues / TBD:
 #   - add error handling for failed optimization when fitting power-law coefficients ("RuntimeError: Optimal parameters not found...")
 #   - add parallel processing to speed up analysis of 50000 books
-#   - check of embeddings are Gaussian, if so use also Pearson based autocorrelation
 #   - PCA or other dimensionality reduction technique
 
 # Research questions:
@@ -21,24 +20,29 @@ metadata = pd.read_csv("SPGC-metadata-2018-07-18.csv")
 # Filter books in English
 metadata = metadata[metadata["language"] == "['en']"]
 
+metadata = metadata.iloc[0:8, :] # FOR TESTING PURPOSES
 # Initialize lists to store results
-books_ids = metadata["id"].tolist()[0:10]
-coeffs = []
+books_ids = metadata["id"].tolist()
+text_coverage = []
+p_value_normality = []
+power_law_coefficient_cosine = []
+power_law_coefficient_pearson = []
 
 # Run pipeline for each book
 for id in books_ids:
     print(f"Analyzing book {id}...")
+
     book_pipeline = pipeline.TextAnalysisPipeline(id, "SGPC", "english", embedder)
     book_pipeline.run_pipeline()
-    print(f"Tokens coverage: {book_pipeline.embedder.calculate_coverage(book_pipeline.tokens)}")
-    coeffs.append(book_pipeline.power_law[1])
-    book_pipeline.make_plots()
+    text_coverage.append(book_pipeline.coverage)
+    p_value_normality.append(book_pipeline.normality)
+    power_law_coefficient_cosine.append(book_pipeline.power_law_cosine)
+    power_law_coefficient_pearson.append(book_pipeline.power_law_pearson)
 
-print(coeffs)
 # Export results
-power_law_results = pd.DataFrame({
-    "book_id": books_ids,
-    "coeff": coeffs
-})
+metadata["Coverage"] = text_coverage
+metadata["p-value HZ"] = p_value_normality
+metadata["Power law (cosine)"] = power_law_coefficient_cosine
+metadata["Power law (Pearson)"] = power_law_coefficient_pearson
 
-power_law_results.to_csv("power_law_results.csv")
+metadata.to_csv("power_law_results.csv")

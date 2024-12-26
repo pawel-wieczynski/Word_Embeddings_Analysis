@@ -28,8 +28,10 @@ class TextAnalysisPipeline:
         self.lags = []
         self.autocorrelation_pearson = []
         self.autocorrelation_cosine = []
-        self.power_law = None
+        self.power_law_pearson = None
+        self.power_law_cosine = None
         self.normality = None
+        self.coverage = None
 
     def run_pipeline(self):
         # Step 1: download text from Project Gutenberg
@@ -48,6 +50,8 @@ class TextAnalysisPipeline:
             ValueError("Unknown source. Please use either PG or SGPC.")
         # Step 3: words to vectors
         self.vectors = np.asarray(self.embedder.embed_text(self.tokens))
+        # Step 3.5: coverage of tokens by embedder
+        self.coverage = self.embedder.calculate_coverage(self.tokens)
         # Step 4. calculate autocorrelation
         self.calculate_autocorrelation()
         # Step 5. fit power law
@@ -68,7 +72,9 @@ class TextAnalysisPipeline:
     
     def fit_power_law(self):
         popt, pcov = curve_fit(utils.power_law, self.lags, self.autocorrelation_cosine, p0 = [1, -1, 1], maxfev = 5000)
-        self.power_law = popt
+        popt2, pcov2 = curve_fit(utils.power_law, self.lags, self.autocorrelation_pearson, p0 = [1, -1, 1], maxfev = 5000)
+        self.power_law_cosine = popt[1]
+        self.power_law_pearson = popt2[1]
     
     def check_normality(self):
         self.normality = pg.multivariate_normality(self.vectors)[1] # p-value of Henze-Zirkler test
