@@ -84,7 +84,7 @@ class TextAnalysisPipeline:
         while current_lag < max_lag:
             self.lags.append(current_lag)
             current_acf_cosine = correlations.calculate_cosine_correlation(self.vectors, L = current_lag)
-            current_acf_pearson = correlations.calculate_cosine_correlation(self.vectors, L = current_lag)
+            current_acf_pearson = correlations.calculate_pearson_correlation(self.vectors, L = current_lag)
             self.autocorrelation_cosine.append(current_acf_cosine)
             self.autocorrelation_pearson.append(current_acf_pearson)
             current_lag = int(np.ceil(current_lag * 1.1))
@@ -93,7 +93,7 @@ class TextAnalysisPipeline:
         def _fit_power_law(lags, acf_function):
             try:
                 popt, _ = curve_fit(utils.power_law, lags, acf_function, p0 = [1, -1, 1], maxfev = 5000)
-                return popt[1]
+                return popt
             except Exception as e:
                 print(f"Error fitting power law for autocorrelation: {e}")
         self.power_law_cosine = _fit_power_law(self.lags, self.autocorrelation_cosine)
@@ -103,17 +103,21 @@ class TextAnalysisPipeline:
         self.normality = pg.multivariate_normality(self.vectors)[1] # p-value of Henze-Zirkler test
 
     def make_plots(self, scales = 'normal', n = 200):
-        if scales == 'log':
-            lags_this = np.log2(self.lags)
-            acf_this = np.log2(np.abs(self.autocorrelation_cosine))
-        else:
-            lags_this = self.lags
-            acf_this = self.autocorrelation_cosine
+        # if scales == 'log':
+        #     lags_this = np.log2(self.lags)
+        #     acf_this = np.log2(np.abs(self.autocorrelation_cosine))
+        # else:
+        #     lags_this = self.lags
+        #     acf_this = self.autocorrelation_cosine
+        lags_this = self.lags
+        def _make_plots(lags_this, coefficients, book_id, acf, acf_name):
+            lags_fit = np.linspace(min(lags_this), max(lags_this), n)
+            acf_fit = utils.power_law(lags_fit, coefficients[0], coefficients[1], coefficients[2])
 
-        lags_fit = np.linspace(min(lags_this), max(lags_this), n)
-        acf_fit = utils.power_law(lags_fit, self.power_law[0], self.power_law[1], self.power_law[2])
+            plt.figure()
+            sns.scatterplot(x = lags_this, y = acf)
+            sns.lineplot(x = lags_fit, y = acf_fit, color = 'red')
+            plt.savefig(f"plots/plot{book_id}_{acf_name}.png")
 
-        plt.figure()
-        sns.scatterplot(x = lags_this, y = acf_this)
-        sns.lineplot(x = lags_fit, y = acf_fit, color = 'red')
-        plt.savefig(f"plot{self.book_id}.png")
+        _make_plots(lags_this, self.power_law_cosine, self.book_id, self.autocorrelation_cosine, "cosine")
+        _make_plots(lags_this, self.power_law_pearson, self.book_id, self.autocorrelation_pearson, "pearson")
