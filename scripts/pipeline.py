@@ -1,6 +1,7 @@
 from scripts import word_embeddings
 from scripts import correlations
 from scripts import utils
+from scripts import coocurrence_matrix
 import numpy as np
 import pingouin as pg
 from scipy.optimize import curve_fit
@@ -8,14 +9,21 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 
 class TextAnalysisPipeline:
-    def __init__(self, book_id: str, source: str, language: str, embedder: word_embeddings.WordEmbeddings):
+    def __init__(self, book_id: str, source: str, language: str, method: str, window_size: int = 3, embedder: word_embeddings.WordEmbeddings = None):
         """
         Parameters:
+            book_id (str)
             source (str): "PG" for Project Gutenberg website, "SGPC" for local files standardized by Gerlach, Font-Clos (2018).
+            language (str)
+            method (str): Either "cooccurence" or "embeddings".
+            window_size (int): Window size for method "cooccurence".
+            embedder: Object of class WordEmbeddings.
         """
         self.book_id = book_id
         self.source = source
         self.language = language
+        self.method = method
+        self.window_size = window_size
         self.embedder = embedder
 
         self.reader = word_embeddings.TextReader(book_id)
@@ -24,6 +32,7 @@ class TextAnalysisPipeline:
         self.raw_text = None
         self.tokens = None
         self.vectors = None
+        self.vocabulary = None
 
         self.lags = []
         self.autocorrelation_pearson = []
@@ -49,15 +58,25 @@ class TextAnalysisPipeline:
         else:
             ValueError("Unknown source. Please use either PG or SGPC.")
         # Step 3: words to vectors
-        self.vectors = np.asarray(self.embedder.embed_text(self.tokens))
-        # Step 3.5: coverage of tokens by embedder
-        self.coverage = self.embedder.calculate_coverage(self.tokens)
+        if self.method == "embeddings":
+            self.vectors = np.asarray(self.embedder.embed_text(self.tokens))
+            # Step 3.5: coverage of tokens by embedder
+            self.coverage = self.embedder.calculate_coverage(self.tokens)
+        elif self.method == 'cooccurence':
+            self.build_coocurrence_matrix()
+        else:
+            ValueError("Unknown method. Please use either 'embeddings' or 'cooccurence'.")
         # Step 4. calculate autocorrelation
         self.calculate_autocorrelation()
         # Step 5. fit power law
         self.fit_power_law()
         # Step 6. check if word embeddings are normally distributed
         self.check_normality()
+    
+    def build_coocurrence_matrix(self):
+        cooccurence_matrix = coocurrence_matrix.CoocurrenceMatrix(self.tokens, self.window_size)
+        matrix, self.vocabulary = cooccurence_matrix.build_matrix()
+        self.vectors = np.asarray([matrix[i, :] for i in range(matrix.shape[0])])
     
     def calculate_autocorrelation(self):
         max_lag = 0.5 * (len(self.vectors) - 1)
