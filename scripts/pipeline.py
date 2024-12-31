@@ -9,7 +9,7 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 
 class TextAnalysisPipeline:
-    def __init__(self, book_id: str, source: str, language: str, method: str, window_size: int = 3, embedder: word_embeddings.WordEmbeddings = None):
+    def __init__(self, book_id: str, source: str, language: str, method: str, window_size: int = 3, sparse: bool = True, embedder: word_embeddings.WordEmbeddings = None):
         """
         Parameters:
             book_id (str)
@@ -24,6 +24,7 @@ class TextAnalysisPipeline:
         self.language = language
         self.method = method
         self.window_size = window_size
+        self.sparse = sparse
         self.embedder = embedder
 
         self.reader = word_embeddings.TextReader(book_id)
@@ -71,22 +72,25 @@ class TextAnalysisPipeline:
         # Step 5. fit power law
         self.fit_power_law()
         # Step 6. check if word embeddings are normally distributed
-        self.check_normality()
+        # self.check_normality()
     
     def build_coocurrence_matrix(self):
         cooccurence_matrix = coocurrence_matrix.CoocurrenceMatrix(self.tokens, self.window_size)
-        matrix, self.vocabulary = cooccurence_matrix.build_matrix()
-        self.vectors = np.asarray([matrix[i, :] for i in range(matrix.shape[0])])
+        matrix, self.vocabulary = cooccurence_matrix.build_matrix(sparse = self.sparse)
+        if self.sparse:
+            self.vectors = np.asarray([matrix[[i], :] for i in range(matrix.shape[0])])
+        else:
+            self.vectors = np.asarray([matrix[i, :] for i in range(matrix.shape[0])])
     
     def calculate_autocorrelation(self):
         max_lag = 0.5 * (len(self.vectors) - 1)
         current_lag = 1
         while current_lag < max_lag:
             self.lags.append(current_lag)
-            current_acf_cosine = correlations.calculate_cosine_correlation(self.vectors, L = current_lag)
-            current_acf_pearson = correlations.calculate_pearson_correlation(self.vectors, L = current_lag)
+            current_acf_cosine = correlations.calculate_cosine_correlation(self.vectors, L = current_lag, sparse = self.sparse)
+            # current_acf_pearson = correlations.calculate_pearson_correlation(self.vectors, L = current_lag)
             self.autocorrelation_cosine.append(current_acf_cosine)
-            self.autocorrelation_pearson.append(current_acf_pearson)
+            # self.autocorrelation_pearson.append(current_acf_pearson)
             current_lag = int(np.ceil(current_lag * 1.1))
     
     def fit_power_law(self):
@@ -97,7 +101,7 @@ class TextAnalysisPipeline:
             except Exception as e:
                 print(f"Error fitting power law for autocorrelation: {e}")
         self.power_law_cosine = _fit_power_law(self.lags, self.autocorrelation_cosine)
-        self.power_law_pearson = _fit_power_law(self.lags, self.autocorrelation_pearson)
+        # self.power_law_pearson = _fit_power_law(self.lags, self.autocorrelation_pearson)
     
     def check_normality(self):
         self.normality = pg.multivariate_normality(self.vectors)[1] # p-value of Henze-Zirkler test
@@ -120,4 +124,4 @@ class TextAnalysisPipeline:
             plt.savefig(f"plots/plot{book_id}_{acf_name}.png")
 
         _make_plots(lags_this, self.power_law_cosine, self.book_id, self.autocorrelation_cosine, "cosine")
-        _make_plots(lags_this, self.power_law_pearson, self.book_id, self.autocorrelation_pearson, "pearson")
+        # _make_plots(lags_this, self.power_law_pearson, self.book_id, self.autocorrelation_pearson, "pearson")

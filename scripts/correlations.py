@@ -3,7 +3,7 @@ import numpy as np
 def _prepare_data_for_autocorrelation(x, L = 1):
     """
     Parameters:
-            x: array of shape (N, d)
+            x: NumPy array of shape (N, d) or SciPy sparse array
     """
     N = x.shape[0]
 
@@ -40,13 +40,18 @@ def calculate_pearson_correlation(x, L = 1):
     corr = cov / np.sqrt(var_Su * var_Sl)
     return corr
 
-def calculate_cosine_correlation(x, L = 1):
+def calculate_cosine_correlation(x, L = 1, sparse: bool = True):
     Su, Sl, M = _prepare_data_for_autocorrelation(x = x, L = L)
 
     # Expected shape (M, )
-    norm_Su = np.linalg.norm(Su, axis = 1)
-    norm_Sl = np.linalg.norm(Sl, axis = 1)
-    dot_products = np.einsum('ij, ij -> i', Su, Sl)
+    if sparse:
+        norm_Su = np.array([np.sqrt(s.multiply(s).sum())for s in Su])
+        norm_Sl = np.array([np.sqrt(s.multiply(s).sum())for s in Sl])
+        dot_products = np.array([(sui.multiply(sli)).sum() for sui, sli in zip(Su, Sl)], dtype = np.float64)
+    else:
+       norm_Su = np.linalg.norm(Su, axis = 1)
+       norm_Sl = np.linalg.norm(Sl, axis = 1)
+       dot_products = np.einsum('ij, ij -> i', Su, Sl)
 
     # Exclude pairs with zero norm
     non_zero_norms = (norm_Su > 0) & (norm_Sl > 0)

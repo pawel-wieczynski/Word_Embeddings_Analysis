@@ -1,6 +1,7 @@
 import numpy as np
 from collections import OrderedDict
 from itertools import combinations
+from scipy.sparse import csr_array
 
 class CoocurrenceMatrix:
     def __init__(self, tokens: list[str], window_size: int = 3) -> None:
@@ -17,7 +18,7 @@ class CoocurrenceMatrix:
             if token not in self.vocabulary:
                 self.vocabulary[token] = len(self.vocabulary)
     
-    def build_matrix(self): #-> tuple(np.ndarray(np.int32), list[str]):
+    def build_matrix(self, sparse: bool = True): #-> tuple(np.ndarray(np.int32), list[str]):
         """
         Create n by n matrix of co-occurence counts in sliding window.
         """
@@ -38,4 +39,6 @@ class CoocurrenceMatrix:
                 matrix[index2, index1] += 1
 
         vocabulary_list = list(self.vocabulary.keys())
+        if sparse:
+            matrix = csr_array(matrix)
         return matrix, vocabulary_list
