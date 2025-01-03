@@ -40,17 +40,23 @@ def calculate_pearson_correlation(x, L = 1):
     corr = cov / np.sqrt(var_Su * var_Sl)
     return corr
 
-def calculate_cosine_correlation(x, L = 1, sparse: bool = True):
+def calculate_cosine_correlation(x, L = 1, sparse: bool = True, norms = None):
     Su, Sl, M = _prepare_data_for_autocorrelation(x = x, L = L)
 
-    # Expected shape (M, )
+    if norms is not None:
+        norm_Su = norms[0:M]
+        norm_Sl = norms[L:(M+L)]
+    else:
+        if sparse:
+            norm_Su = np.array([np.sqrt(s.multiply(s).sum())for s in Su])
+            norm_Sl = np.array([np.sqrt(s.multiply(s).sum())for s in Sl])
+        else:
+            norm_Su = np.linalg.norm(Su, axis = 1)
+            norm_Sl = np.linalg.norm(Sl, axis = 1)
+
     if sparse:
-        norm_Su = np.array([np.sqrt(s.multiply(s).sum())for s in Su])
-        norm_Sl = np.array([np.sqrt(s.multiply(s).sum())for s in Sl])
         dot_products = np.array([(sui.multiply(sli)).sum() for sui, sli in zip(Su, Sl)], dtype = np.float64)
     else:
-       norm_Su = np.linalg.norm(Su, axis = 1)
-       norm_Sl = np.linalg.norm(Sl, axis = 1)
        dot_products = np.einsum('ij, ij -> i', Su, Sl)
 
     # Exclude pairs with zero norm

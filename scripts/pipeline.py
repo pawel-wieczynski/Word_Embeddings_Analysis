@@ -33,6 +33,7 @@ class TextAnalysisPipeline:
         self.raw_text = None
         self.tokens = None
         self.vectors = None
+        self.norms = None
         self.vocabulary = None
 
         self.lags = []
@@ -68,6 +69,7 @@ class TextAnalysisPipeline:
         else:
             ValueError("Unknown method. Please use either 'embeddings' or 'cooccurence'.")
         # Step 4. calculate autocorrelation
+        self.calculate_norms()
         self.calculate_autocorrelation()
         # Step 5. fit power law
         self.fit_power_law()
@@ -82,12 +84,15 @@ class TextAnalysisPipeline:
         else:
             self.vectors = np.asarray([matrix[i, :] for i in range(matrix.shape[0])])
     
+    def calculate_norms(self):
+        self.norms = np.linalg.norm(self.vectors, axis = 1)
+    
     def calculate_autocorrelation(self):
         max_lag = 0.5 * (len(self.vectors) - 1)
         current_lag = 1
         while current_lag < max_lag:
             self.lags.append(current_lag)
-            current_acf_cosine = correlations.calculate_cosine_correlation(self.vectors, L = current_lag, sparse = self.sparse)
+            current_acf_cosine = correlations.calculate_cosine_correlation(self.vectors, L = current_lag, sparse = self.sparse, norms = self.norms)
             # current_acf_pearson = correlations.calculate_pearson_correlation(self.vectors, L = current_lag)
             self.autocorrelation_cosine.append(current_acf_cosine)
             # self.autocorrelation_pearson.append(current_acf_pearson)
