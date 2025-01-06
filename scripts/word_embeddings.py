@@ -23,7 +23,7 @@ class TextReader:
         self.text = response.text
     
     def read_tokens(self) -> list[str]:
-        text_file = open(self.path, "r")
+        text_file = open(self.path, "r", encoding = "utf8", errors = "ingore")
         self.tokens = text_file.read().split('\n')
         
 class TextPreprocessor:
