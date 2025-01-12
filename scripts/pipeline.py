@@ -112,22 +112,22 @@ class TextAnalysisPipeline:
     def check_normality(self):
         self.normality = pg.multivariate_normality(self.vectors)[1] # p-value of Henze-Zirkler test
 
-    def make_plots(self, scales = 'normal', n = 200):
-        # if scales == 'log':
-        #     lags_this = np.log2(self.lags)
-        #     acf_this = np.log2(np.abs(self.autocorrelation_cosine))
-        # else:
-        #     lags_this = self.lags
-        #     acf_this = self.autocorrelation_cosine
+    def make_plots(self, scales = 'normal', shift = True, n = 200):
         lags_this = self.lags
-        def _make_plots(lags_this, coefficients, book_id, acf, acf_name):
+        acf_this = self.autocorrelation_cosine
+        if shift:
+            acf_this = acf_this - self.power_law_cosine[2]
+        if scales == 'log':
+            lags_this = np.log10(lags_this)
+            acf_this = np.log10(np.abs(acf_this))
+        def _make_plots(lags_this, acf_this, coefficients, book_id, acf_name):
             lags_fit = np.linspace(min(lags_this), max(lags_this), n)
             acf_fit = utils.power_law(lags_fit, coefficients[0], coefficients[1], coefficients[2])
 
             plt.figure()
-            sns.scatterplot(x = lags_this, y = acf)
-            sns.lineplot(x = lags_fit, y = acf_fit, color = 'red')
+            plt.stem(lags_this, acf_this)
+            # sns.lineplot(x = lags_fit, y = acf_fit, color = 'red')
             plt.savefig(f"plots/plot{book_id}_{acf_name}.png")
 
-        _make_plots(lags_this, self.power_law_cosine, self.book_id, self.autocorrelation_cosine, "cosine")
+        _make_plots(lags_this, acf_this, self.power_law_cosine, self.book_id, "cosine")
         # _make_plots(lags_this, self.power_law_pearson, self.book_id, self.autocorrelation_pearson, "pearson")
