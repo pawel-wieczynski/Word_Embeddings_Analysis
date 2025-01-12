@@ -105,6 +105,7 @@ class TextAnalysisPipeline:
                 return popt
             except Exception as e:
                 print(f"Error fitting power law for autocorrelation: {e}")
+                return [99.9, 99.9, 99.9]
         self.power_law_cosine = _fit_power_law(self.lags, self.autocorrelation_cosine)
         # self.power_law_pearson = _fit_power_law(self.lags, self.autocorrelation_pearson)
     
