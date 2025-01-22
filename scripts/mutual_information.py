@@ -22,7 +22,7 @@ class MutualInformation:
         
         for i in range(self.tokens_length - lag):
             x = self.tokens[i]
-            y = self.tokens[i + 1]
+            y = self.tokens[i + lag]
             joint_counts[(x, y)] += 1
 
         return joint_counts
@@ -30,9 +30,9 @@ class MutualInformation:
     def get_marginal_probability(self, word: str) -> float:
         return self.tokens_counts[word] / self.tokens_length
     
-    def get_joint_probability(self, word_x: str, word_y: str, join_counts) -> float:
-        number_of_pairs = sum(join_counts.values())
-        return join_counts[(word_x, word_y)] / number_of_pairs if number_of_pairs > 0 else 0.0
+    def get_joint_probability(self, word_x: str, word_y: str, joint_counts) -> float:
+        number_of_pairs = sum(joint_counts.values())
+        return joint_counts[(word_x, word_y)] / number_of_pairs if number_of_pairs > 0 else 0.0
     
     def calculate_mutual_information(self, lag: int):
         joint_counts = self.count_joint_tokens(lag = lag)
