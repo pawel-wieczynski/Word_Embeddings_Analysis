@@ -62,6 +62,13 @@ class EntropyEstimator:
 
     def lagged_tokens(self, lag: int):
         return self.tokens[:-lag], self.tokens[lag:]
+    
+    def naive_entropy(self, N_i: dict) -> float:
+        N = sum(N_i.values())
+        if N == 0:
+            return 0.0
+        
+        return -sum(n_i * log2(n_i / N) for n_i in N_i.values()) / N
 
     def grassberger_entropy(self, N_i: dict) -> float:
         """
@@ -74,17 +81,10 @@ class EntropyEstimator:
         N = sum(N_i.values())
         if N == 0:
             return 0.0
-    
-        return -sum(n_i * log2(n_i / N) for n_i in N_i.values()) / N
-    
-    def naive_entropy(self, N_i: dict) -> float:
-        N = sum(N_i.values())
-        if N == 0:
-            return 0.0
-        
+
         term = sum(n_i * digamma(n_i) for n_i in N_i.values())
         return log2(N) - (term / N)
-    
+        
     def estimate_entropy(self, tokens: list[str]) -> float:
         if self.method == "naive":
             return self.naive_entropy(Counter(tokens))
