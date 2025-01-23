@@ -1,5 +1,6 @@
-from collections import defaultdict
+from collections import defaultdict, Counter
 from numpy import log2
+from scipy.special import digamma
 
 class MutualInformation:
     def __init__(self, tokens: list[str]) -> None:
@@ -50,3 +51,42 @@ class MutualInformation:
                 mi += p_xy * log2(p_xy / (p_x * p_y))
         
         return mi
+
+class GrassbergerEntropyEstimator:
+    def __init__(self, tokens) -> None:
+        self.tokens: list[str] = tokens
+
+    def lagged_tokens(self, lag: int):
+        return self.tokens[:-lag], self.tokens[lag:]
+
+    def grassberger_entropy(self, N_i: dict ) -> float:
+        """
+        Formula D1 (Lin, Tegmark, 2017):
+            S_hat = log(N) - 1/N \sum_i N_i * digamma(N_i)
+        where 
+            - N_i - number of occurrences of ith token
+            - N = \sum_i N_i
+        """
+        N = sum(N_i.values())
+        if N == 0:
+            return 0.0
+        
+        term = sum(n_i * digamma(n_i) for n_i in N_i.values())
+        return log2(N) - (term / N)
+    
+    def estimate_entropy(self, tokens: list[str]) -> float:
+        return self.grassberger_entropy(Counter(tokens))
+
+    def estimate_joint_entropy(self, token_pairs) -> float:
+        pass
+
+    def calculate_mutual_information(self, lag: int) -> float:
+        """
+        It is well known fact from information theory that MI(X,Y) = H(X) + H(Y) - H(X, Y)
+        """
+        X, Y = self.lagged_tokens(lag)
+        H_X = self.estimate_entropy(X)
+        H_Y = self.estimate_entropy(Y)
+        H_XY = self.estimate_entropy(list(zip(X, Y)))
+
+        return H_X + H_Y - H_XY
