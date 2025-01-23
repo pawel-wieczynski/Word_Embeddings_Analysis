@@ -1,5 +1,5 @@
 from collections import defaultdict, Counter
-from numpy import log2
+from numpy import log2, log
 from scipy.special import digamma
 
 class MutualInformation:
@@ -69,6 +69,19 @@ class EntropyEstimator:
             return 0.0
         
         return -sum(n_i * log2(n_i / N) for n_i in N_i.values()) / N
+    
+    def miller_madow_entropy(self, N_i: dict) -> float:
+        N = sum(N_i.values())
+        if N == 0:
+            return 0.0
+        
+        # Number of bins with non-zero count
+        m_hat = len(N_i)
+
+        H_naive = self.naive_entropy(N_i)
+        correction = (m_hat - 1) / (2 * N * log(2))
+
+        return H_naive + correction
 
     def grassberger_entropy(self, N_i: dict) -> float:
         """
@@ -81,15 +94,20 @@ class EntropyEstimator:
         N = sum(N_i.values())
         if N == 0:
             return 0.0
-
+        
         term = sum(n_i * digamma(n_i) for n_i in N_i.values())
         return log2(N) - (term / N)
         
     def estimate_entropy(self, tokens: list[str]) -> float:
+        counts = Counter(tokens)
         if self.method == "naive":
-            return self.naive_entropy(Counter(tokens))
+            return self.naive_entropy(counts)
         elif self.method == "grassberger":
-            return self.grassberger_entropy(Counter(tokens))
+            return self.grassberger_entropy(counts)
+        elif self.method == "miller-madow":
+            return self.miller_madow_entropy(counts)
+        else:
+            raise ValueError(f"Unknown method: {self.method}")
 
     def estimate_joint_entropy(self, token_pairs) -> float:
         pass
