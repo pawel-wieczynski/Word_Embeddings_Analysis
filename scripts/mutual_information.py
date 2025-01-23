@@ -52,14 +52,18 @@ class MutualInformation:
         
         return mi
 
-class GrassbergerEntropyEstimator:
-    def __init__(self, tokens) -> None:
+class EntropyEstimator:
+    def __init__(self, tokens: list[str], method: str) -> None:
+        """
+        Methods: naive, grassberger, miller-madow
+        """
         self.tokens: list[str] = tokens
+        self.method: str = method
 
     def lagged_tokens(self, lag: int):
         return self.tokens[:-lag], self.tokens[lag:]
 
-    def grassberger_entropy(self, N_i: dict ) -> float:
+    def grassberger_entropy(self, N_i: dict) -> float:
         """
         Formula D1 (Lin, Tegmark, 2017):
             S_hat = log(N) - 1/N \sum_i N_i * digamma(N_i)
@@ -70,12 +74,22 @@ class GrassbergerEntropyEstimator:
         N = sum(N_i.values())
         if N == 0:
             return 0.0
+    
+        return -sum(n_i * log2(n_i / N) for n_i in N_i.values()) / N
+    
+    def naive_entropy(self, N_i: dict) -> float:
+        N = sum(N_i.values())
+        if N == 0:
+            return 0.0
         
         term = sum(n_i * digamma(n_i) for n_i in N_i.values())
         return log2(N) - (term / N)
     
     def estimate_entropy(self, tokens: list[str]) -> float:
-        return self.grassberger_entropy(Counter(tokens))
+        if self.method == "naive":
+            return self.naive_entropy(Counter(tokens))
+        elif self.method == "grassberger":
+            return self.grassberger_entropy(Counter(tokens))
 
     def estimate_joint_entropy(self, token_pairs) -> float:
         pass
