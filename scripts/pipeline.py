@@ -17,6 +17,7 @@ class TextAnalysisPipeline:
             language (str)
             method (str): Either "cooccurence" or "embeddings".
             window_size (int): Window size for method "cooccurence".
+            sparse (bool): DON'T USE
             embedder: Object of class WordEmbeddings.
         """
         self.book_id = book_id
@@ -78,11 +79,18 @@ class TextAnalysisPipeline:
     
     def build_coocurrence_matrix(self):
         cooccurence_matrix = coocurrence_matrix.CoocurrenceMatrix(self.tokens, self.window_size)
-        matrix, self.vocabulary = cooccurence_matrix.build_matrix(sparse = self.sparse)
+        matrix, vocabulary = cooccurence_matrix.build_matrix(sparse = self.sparse)
+        self.vocabulary = {token: i for i, token in enumerate(vocabulary)}
         if self.sparse:
             self.vectors = np.asarray([matrix[[i], :] for i in range(matrix.shape[0])])
         else:
-            self.vectors = np.asarray([matrix[i, :] for i in range(matrix.shape[0])])
+            N = len(self.tokens) # Length of text
+            n = matrix.shape[1] # Number of unique tokens
+            vectors = np.zeros((N, n))
+            for i, token in enumerate(self.tokens):
+                token_id = self.vocabulary[token]
+                vectors[i, :] = matrix[token_id]
+            self.vectors = vectors
     
     def calculate_norms(self):
         self.norms = np.linalg.norm(self.vectors, axis = 1)
